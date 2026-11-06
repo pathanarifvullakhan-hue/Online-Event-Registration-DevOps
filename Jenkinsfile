@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -29,16 +28,17 @@ pipeline {
 
         stage('Run Application') {
             steps {
-                sh 'docker compose up -d --build app'
-                sh 'sleep 8'
-                sh '''docker compose exec -T app node -e "fetch('http://localhost:3000').then(r => { console.log('HTTP STATUS:', r.status); process.exit(r.ok ? 0 : 1) }).catch(e => { console.error(e); process.exit(1) })"'''
+                sh 'docker rm -f event-registration-jenkins || true'
+                sh 'docker run -d --name event-registration-jenkins -p 3000:3000 -e PORT=3000 online-event-registration:${BUILD_NUMBER}'
+                sh 'sleep 10'
+                sh '''docker exec event-registration-jenkins node -e "fetch('http://localhost:3000').then(r => { console.log('HTTP STATUS:', r.status); process.exit(r.ok ? 0 : 1) }).catch(e => { console.error(e); process.exit(1) })"'''
             }
         }
     }
 
     post {
         always {
-            sh 'docker compose down || true'
+            sh 'docker rm -f event-registration-jenkins || true'
             archiveArtifacts artifacts: 'test-results/**', allowEmptyArchive: true
         }
     }
