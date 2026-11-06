@@ -1,3 +1,4 @@
+
 services:
   app:
     build: .
@@ -5,37 +6,55 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PORT: 3000
-      DB_PATH: /app/data/events.db
-      SESSION_SECRET: change-this-for-real-deployment
+      PORT: "3000"
     volumes:
       - event_data:/app/data
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
-      interval: 10s
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 10s
+
   selenium:
-    image: selenium/standalone-chrome:4.27.0
+    image: selenium/standalone-chromium:latest
     container_name: event-selenium
-    shm_size: 2gb
+    profiles:
+      - test
     ports:
       - "4444:4444"
-    profiles: ["test"]
+    shm_size: 2gb
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:4444/status', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
   e2e:
-    image: node:20-bookworm-slim
+    image: node:22-bookworm-slim
+    profiles:
+      - test
     working_dir: /app
     volumes:
       - .:/app
     environment:
-      SELENIUM_URL: http://selenium:4444/wd/hub
-      BASE_URL: http://app:3000
+      BASE_URL: 'http://app:3000'
+      SELENIUM_URL: 'http://selenium:4444'
     command: sh -c "npm install && npm run test:e2e"
     depends_on:
       app:
         condition: service_healthy
       selenium:
-        condition: service_started
-    profiles: ["test"]
+        condition: service_healthy
+
 volumes:
   event_data:
