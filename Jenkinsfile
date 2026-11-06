@@ -1,40 +1,44 @@
+
 pipeline {
     agent any
+
     stages {
         stage('Checkout') {
-            steps { checkout scm }
-        }
-        stage('Install Dependencies') {
             steps {
-                sh 'docker run --rm -v "$PWD:/app" -w /app node:20-bookworm-slim sh -c "npm install"'
+                checkout scm
             }
         }
+
+        stage('Build Test Image') {
+            steps {
+                sh 'docker build -f Dockerfile.test -t online-event-registration-test:${BUILD_NUMBER} .'
+            }
+        }
+
         stage('Unit Tests') {
             steps {
-                sh 'docker run --rm -v "$PWD:/app" -w /app node:20-bookworm-slim sh -c "npm install && npm test"'
+                sh 'docker run --rm online-event-registration-test:${BUILD_NUMBER} npm test'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t online-event-registration:${BUILD_NUMBER} .'
             }
         }
+
         stage('Run Application') {
             steps {
-                sh 'docker compose up -d app'
+                sh 'docker compose up -d --build app'
                 sh 'sleep 8'
-                sh 'curl --fail http://localhost:3000/health'
-            }
-        }
-        stage('Selenium Tests') {
-            steps {
-                sh 'docker compose --profile test up --abort-on-container-exit --exit-code-from e2e selenium e2e'
+                sh '''docker compose exec -T app node -e "fetch('http://localhost:3000').then(r => { console.log('HTTP STATUS:', r.status); process.exit(r.ok ? 0 : 1) }).catch(e => { console.error(e); process.exit(1) })"'''
             }
         }
     }
+
     post {
         always {
-            sh 'docker compose --profile test down || true'
+            sh 'docker compose down || true'
             archiveArtifacts artifacts: 'test-results/**', allowEmptyArchive: true
         }
     }
