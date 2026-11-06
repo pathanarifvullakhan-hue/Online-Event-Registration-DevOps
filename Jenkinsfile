@@ -29,7 +29,7 @@ pipeline {
         stage('Run Application') {
             steps {
                 sh 'docker rm -f event-registration-jenkins || true'
-                sh 'docker run -d --name event-registration-jenkins -p 3000:3000 -e PORT=3000 online-event-registration:${BUILD_NUMBER}'
+                sh 'docker run -d --name event-registration-jenkins -e PORT=3000 online-event-registration:${BUILD_NUMBER}'
                 sh 'sleep 10'
                 sh '''docker exec event-registration-jenkins node -e "fetch('http://localhost:3000').then(r => { console.log('HTTP STATUS:', r.status); process.exit(r.ok ? 0 : 1) }).catch(e => { console.error(e); process.exit(1) })"'''
             }
