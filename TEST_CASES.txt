@@ -1,0 +1,14 @@
+Online Event Registration - Test Cases
+
+TC01 | Open registration page | Page should load
+TC02 | Register with valid details | Registration successful
+TC03 | Submit empty form | Validation message
+TC04 | Enter invalid email | Error/validation message
+TC05 | Register with duplicate email | Duplicate registration prevented
+TC06 | Login with valid credentials | Dashboard/navigation displayed
+TC07 | View registered events | Correct events displayed
+TC08 | Register for an event | Registration confirmation displayed
+TC09 | View My Registrations | Registered event displayed
+TC10 | Admin views participants | Participant list displayed
+TC11 | Student opens admin endpoint | Access denied
+TC12 | Register for same event twice | Duplicate registration prevented

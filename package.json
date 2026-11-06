@@ -1,0 +1,21 @@
+{
+  "name": "online-event-registration-devops",
+  "version": "1.0.0",
+  "description": "Online Event Registration and Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/unit/*.test.js",
+    "test:e2e": "node tests/selenium/event-registration.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "selenium-webdriver": "^4.27.0"
+  }
+}

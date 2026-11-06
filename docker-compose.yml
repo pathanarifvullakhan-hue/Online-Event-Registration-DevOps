@@ -1,0 +1,41 @@
+services:
+  app:
+    build: .
+    container_name: event-registration-app
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_PATH: /app/data/events.db
+      SESSION_SECRET: change-this-for-real-deployment
+    volumes:
+      - event_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  selenium:
+    image: selenium/standalone-chrome:4.27.0
+    container_name: event-selenium
+    shm_size: 2gb
+    ports:
+      - "4444:4444"
+    profiles: ["test"]
+  e2e:
+    image: node:20-bookworm-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      SELENIUM_URL: http://selenium:4444/wd/hub
+      BASE_URL: http://app:3000
+    command: sh -c "npm install && npm run test:e2e"
+    depends_on:
+      app:
+        condition: service_healthy
+      selenium:
+        condition: service_started
+    profiles: ["test"]
+volumes:
+  event_data:
